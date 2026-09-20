@@ -1,0 +1,22 @@
+# Kubernetes secrets
+kubernetes/secret.yaml
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform variable files may contain secrets
+*.tfvars
+*.tfvars.json
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Kamal secrets
+app/.kamal/secrets

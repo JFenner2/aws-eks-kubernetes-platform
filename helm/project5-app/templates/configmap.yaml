@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ include "project5-app.fullname" . }}-config
+  labels:
+    {{- include "project5-app.labels" . | nindent 4 }}
+
+data:
+  APP_ENV: {{ .Values.config.APP_ENV | quote }}
+  LOG_LEVEL: {{ .Values.config.LOG_LEVEL | quote }}

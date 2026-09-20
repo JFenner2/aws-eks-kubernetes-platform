@@ -1,0 +1,117 @@
+# Default values for project5-app.
+
+# Number of application Pods when autoscaling is not controlling replicas.
+replicaCount: 2
+
+# Container image configuration.
+image:
+  repository: project5-app
+  pullPolicy: IfNotPresent
+  tag: "test"
+
+# Private registry credentials.
+imagePullSecrets: []
+
+# Helm naming overrides.
+nameOverride: ""
+fullnameOverride: ""
+
+# Kubernetes ServiceAccount.
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: "project5-app"
+
+# Additional Pod annotations and labels.
+podAnnotations: {}
+podLabels: {}
+
+# Pod and container security settings.
+podSecurityContext: {}
+securityContext: {}
+
+# Kubernetes Service.
+service:
+  type: ClusterIP
+  port: 80
+
+# Ingress will be configured later when required.
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# Gateway API HTTPRoute is not currently being used.
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  hostnames:
+    - chart-example.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+# CPU and memory configuration.
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+# Kubernetes health checks.
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# Horizontal Pod Autoscaler.
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 60
+
+# Non-sensitive application configuration.
+config:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+
+# Secret values are NOT stored here.
+# They will be supplied securely outside the committed values file.
+
+# Additional storage configuration.
+volumes: []
+volumeMounts: []
+
+# Pod scheduling configuration.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod Disruption Budget.
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
