@@ -4,10 +4,11 @@
 replicaCount: 2
 
 # Container image configuration.
+
 image:
-  repository: project5-app
+  repository: 118178009894.dkr.ecr.ap-southeast-2.amazonaws.com/project5-app
   pullPolicy: IfNotPresent
-  tag: "test"
+  tag: "v1"
 
 # Private registry credentials.
 imagePullSecrets: []

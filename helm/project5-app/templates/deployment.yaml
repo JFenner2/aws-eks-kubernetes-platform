@@ -50,11 +50,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
           env:
-            - name: SECRET_KEY_BASE_DUMMY
+          env:
+            - name: SECRET_KEY_BASE
               valueFrom:
                 secretKeyRef:
                   name: project5-app-secret
-                  key: SECRET_KEY_BASE_DUMMY
+                  key: SECRET_KEY_BASE
 
           envFrom:
             - configMapRef:
