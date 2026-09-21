@@ -39,7 +39,7 @@ service:
 
 # Ingress will be configured later when required.
 ingress:
-  enabled: false
+  enabled: true
   className: ""
   annotations: {}
   hosts:

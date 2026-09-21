@@ -34,3 +34,19 @@ resource "aws_eks_addon" "kube_proxy" {
     Name = "${var.project_name}-kube-proxy"
   }
 }
+
+# EKS Pod Identity Agent.
+# Provides temporary AWS credentials to Kubernetes workloads
+# through IAM roles associated with Kubernetes service accounts.
+resource "aws_eks_addon" "pod_identity_agent" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "eks-pod-identity-agent"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name = "${var.project_name}-pod-identity-agent"
+  }
+}
