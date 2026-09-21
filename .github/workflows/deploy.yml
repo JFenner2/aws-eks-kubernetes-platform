@@ -1,0 +1,111 @@
+name: Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-2
+  EKS_CLUSTER_NAME: project5-cluster
+  ECR_REPOSITORY: project5-app
+  HELM_RELEASE: project5-app
+  KUBERNETES_NAMESPACE: project5
+
+jobs:
+  test-build-deploy:
+    name: Test, Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ------------------------------------------------------------
+      # 1. CHECKOUT
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # ------------------------------------------------------------
+      # 2. TEST RAILS APPLICATION
+      # ------------------------------------------------------------
+      - name: Run Rails tests
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -t project5-app:test \
+            ./app
+
+          docker run --rm \
+            -e SECRET_KEY_BASE_DUMMY=1 \
+            project5-app:test \
+            bin/rails test
+
+      # ------------------------------------------------------------
+      # 3. AUTHENTICATE TO AWS USING GITHUB OIDC
+      # ------------------------------------------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::118178009894:role/project5-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ------------------------------------------------------------
+      # 4. LOGIN TO AMAZON ECR
+      # ------------------------------------------------------------
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ------------------------------------------------------------
+      # 5. BUILD AND PUSH IMMUTABLE IMAGE
+      # ------------------------------------------------------------
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            ./app
+
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # ------------------------------------------------------------
+      # 6. CONFIGURE ACCESS TO EKS
+      # ------------------------------------------------------------
+      - name: Configure EKS kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$EKS_CLUSTER_NAME"
+
+      # ------------------------------------------------------------
+      # 7. DEPLOY NEW IMAGE WITH HELM
+      # ------------------------------------------------------------
+      - name: Deploy to EKS with Helm
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          helm upgrade --install "$HELM_RELEASE" ./helm/project5-app \
+            --namespace "$KUBERNETES_NAMESPACE" \
+            --set image.repository="$ECR_REGISTRY/$ECR_REPOSITORY" \
+            --set image.tag="$IMAGE_TAG" \
+            --wait \
+            --timeout 5m
+
+      # ------------------------------------------------------------
+      # 8. VERIFY THE ROLLOUT
+      # ------------------------------------------------------------
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/project5-app \
+            --namespace "$KUBERNETES_NAMESPACE" \
+            --timeout=180s
+
+          kubectl get pods \
+            --namespace "$KUBERNETES_NAMESPACE"

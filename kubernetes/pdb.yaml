@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: project5-app
+  namespace: project5
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: project5-app
