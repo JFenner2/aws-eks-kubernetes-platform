@@ -46,3 +46,29 @@ resource "helm_release" "metrics_server" {
     aws_eks_node_group.main
   ]
 }
+
+resource "helm_release" "external_secrets" {
+  name       = "external-secrets"
+  repository = "https://charts.external-secrets.io"
+  chart      = "external-secrets"
+  version    = "2.10.0"
+
+  namespace        = "external-secrets"
+  create_namespace = true
+
+  set = [
+    {
+      name  = "serviceAccount.create"
+      value = "true"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = "external-secrets"
+    }
+  ]
+
+  depends_on = [
+    aws_eks_node_group.main,
+    aws_eks_addon.pod_identity_agent
+  ]
+}

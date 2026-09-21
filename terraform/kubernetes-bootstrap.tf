@@ -38,6 +38,24 @@ resource "kubernetes_role_v1" "github_deployer" {
   }
 
   rule {
+    api_groups = ["external-secrets.io"]
+
+    resources = [
+      "externalsecrets",
+      "secretstores"
+    ]
+
+    verbs = [
+      "get",
+      "list",
+      "watch",
+      "create",
+      "update",
+      "patch",
+      "delete"
+    ]
+  }
+  rule {
     api_groups = ["autoscaling"]
     resources  = ["horizontalpodautoscalers"]
     verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]
