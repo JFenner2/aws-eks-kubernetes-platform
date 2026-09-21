@@ -33,7 +33,7 @@ resource "aws_iam_role" "github_actions" {
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:sub" = "repo:JFenner2/aws-eks-kubernetes-platform:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:JFenner2@299982457/aws-eks-kubernetes-platform@1370653929:ref:refs/heads/main"
           }
         }
       }
