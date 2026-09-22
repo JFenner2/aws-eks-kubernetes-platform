@@ -3,6 +3,7 @@
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
+  version  = "1.36"
 
   # Use the modern EKS access management API.
   access_config {
