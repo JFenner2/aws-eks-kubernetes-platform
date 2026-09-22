@@ -45,7 +45,8 @@ resource "aws_iam_role" "github_actions" {
   }
 }
 
-# Allow GitHub Actions to authenticate to ECR.
+# Allow GitHub Actions to authenticate to ECR, push application images,
+# and inspect vulnerability scan results for the application repository.
 resource "aws_iam_role_policy" "github_actions_ecr" {
   name = "${var.project_name}-github-actions-ecr"
   role = aws_iam_role.github_actions.id
@@ -72,7 +73,8 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:InitiateLayerUpload",
           "ecr:PutImage",
-          "ecr:UploadLayerPart"
+          "ecr:UploadLayerPart",
+          "ecr:DescribeImageScanFindings"
         ]
 
         Resource = aws_ecr_repository.app.arn

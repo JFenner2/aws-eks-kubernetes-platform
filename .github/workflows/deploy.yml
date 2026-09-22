@@ -18,7 +18,7 @@ env:
 
 jobs:
   test-build-deploy:
-    name: Test, Build and Deploy
+    name: Test, Build, Scan and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -75,7 +75,46 @@ jobs:
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       # ------------------------------------------------------------
-      # 6. CONFIGURE ACCESS TO EKS
+      # 6. WAIT FOR ECR VULNERABILITY SCAN
+      # ------------------------------------------------------------
+      - name: Wait for ECR image scan
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws ecr wait image-scan-complete \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-id imageTag="$IMAGE_TAG" \
+            --region "$AWS_REGION"
+
+      # ------------------------------------------------------------
+      # 7. SECURITY GATE
+      # ------------------------------------------------------------
+      - name: Block images with critical vulnerabilities
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          CRITICAL_FINDINGS=$(aws ecr describe-image-scan-findings \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-id imageTag="$IMAGE_TAG" \
+            --region "$AWS_REGION" \
+            --query 'imageScanFindings.findingSeverityCounts.CRITICAL' \
+            --output text)
+
+          if [ "$CRITICAL_FINDINGS" = "None" ]; then
+            CRITICAL_FINDINGS=0
+          fi
+
+          echo "Critical vulnerabilities found: $CRITICAL_FINDINGS"
+
+          if [ "$CRITICAL_FINDINGS" -gt 0 ]; then
+            echo "Deployment blocked: image contains critical vulnerabilities."
+            exit 1
+          fi
+
+          echo "Security gate passed."
+
+      # ------------------------------------------------------------
+      # 8. CONFIGURE ACCESS TO EKS
       # ------------------------------------------------------------
       - name: Configure EKS kubeconfig
         run: |
@@ -84,7 +123,7 @@ jobs:
             --name "$EKS_CLUSTER_NAME"
 
       # ------------------------------------------------------------
-      # 7. DEPLOY NEW IMAGE WITH HELM
+      # 9. DEPLOY NEW IMAGE WITH HELM
       # ------------------------------------------------------------
       - name: Deploy to EKS with Helm
         env:
@@ -99,7 +138,7 @@ jobs:
             --timeout 5m
 
       # ------------------------------------------------------------
-      # 8. VERIFY THE ROLLOUT
+      # 10. VERIFY THE ROLLOUT
       # ------------------------------------------------------------
       - name: Verify deployment
         run: |
