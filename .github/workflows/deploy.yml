@@ -81,10 +81,38 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          aws ecr wait image-scan-complete \
-            --repository-name "$ECR_REPOSITORY" \
-            --image-id imageTag="$IMAGE_TAG" \
-            --region "$AWS_REGION"
+          MAX_ATTEMPTS=12
+          ATTEMPT=1
+
+          while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
+            echo "Checking for ECR image scan (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+
+            SCAN_STATUS=$(aws ecr describe-image-scan-findings \
+              --repository-name "$ECR_REPOSITORY" \
+              --image-id imageTag="$IMAGE_TAG" \
+              --region "$AWS_REGION" \
+              --query 'imageScanStatus.status' \
+              --output text 2>/dev/null || true)
+
+            if [ "$SCAN_STATUS" = "COMPLETE" ]; then
+              echo "ECR image scan completed."
+              break
+            fi
+
+            if [ "$SCAN_STATUS" = "FAILED" ]; then
+              echo "ECR image scan failed."
+              exit 1
+            fi
+
+            if [ "$ATTEMPT" -eq "$MAX_ATTEMPTS" ]; then
+              echo "ECR image scan did not complete within the allowed time."
+              exit 1
+            fi
+
+            echo "Current scan status: ${SCAN_STATUS:-not available yet}"
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+          done
 
       # ------------------------------------------------------------
       # 7. SECURITY GATE
