@@ -60,11 +60,6 @@ resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
-# Allows the VPC CNI running on the nodes to manage VPC networking.
-resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = aws_iam_role.eks_nodes.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
 
 # Allows worker nodes to pull container images from Amazon ECR.
 resource "aws_iam_role_policy_attachment" "eks_ecr_read_only" {
