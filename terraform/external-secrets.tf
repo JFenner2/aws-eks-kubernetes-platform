@@ -14,7 +14,7 @@ resource "aws_iam_policy" "external_secrets" {
           "secretsmanager:DescribeSecret"
         ]
 
-        Resource = aws_secretsmanager_secret.rails_secret_key_base.arn
+        Resource = data.aws_secretsmanager_secret.rails_secret_key_base.arn
       }
     ]
   })
