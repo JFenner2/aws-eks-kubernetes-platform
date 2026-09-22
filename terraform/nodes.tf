@@ -1,4 +1,5 @@
 # EKS managed node group.
+
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-nodes"
@@ -22,9 +23,14 @@ resource "aws_eks_node_group" "main" {
     max_unavailable = 1
   }
 
+  # The VPC CNI Pod Identity association must exist before workers launch.
+  # This ensures aws-node can obtain its dedicated AWS permissions during
+  # initial node bootstrap instead of requiring CNI permissions on the
+  # EC2 worker-node role.
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_ecr_read_only
+    aws_iam_role_policy_attachment.eks_ecr_read_only,
+    aws_eks_pod_identity_association.vpc_cni
   ]
 
   tags = {
