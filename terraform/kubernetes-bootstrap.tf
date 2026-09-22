@@ -1,9 +1,9 @@
 resource "kubernetes_namespace_v1" "project5" {
   metadata {
-    name = "project5"
+    name = var.project_name
 
     labels = {
-      "app.kubernetes.io/part-of"    = "project5"
+      "app.kubernetes.io/part-of"    = var.project_name
       "app.kubernetes.io/managed-by" = "Terraform"
     }
   }
@@ -55,6 +55,7 @@ resource "kubernetes_role_v1" "github_deployer" {
       "delete"
     ]
   }
+
   rule {
     api_groups = ["autoscaling"]
     resources  = ["horizontalpodautoscalers"]
@@ -88,7 +89,7 @@ resource "kubernetes_role_binding_v1" "github_deployer" {
 
   subject {
     kind      = "Group"
-    name      = "project5-deployers"
+    name      = "${var.project_name}-deployers"
     api_group = "rbac.authorization.k8s.io"
   }
 
